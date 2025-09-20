@@ -24,8 +24,8 @@ class BlogRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required',
-            'description' => 'required|min:5',
+            'title'=> 'required|string|max:50',
+            'description' => 'required|string|min:5|max:5000',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ];
     }
@@ -35,7 +35,8 @@ class BlogRequest extends FormRequest
         return [
             'title.required' => 'Blog Title is Required',
             'description.required' => 'Blog Description is Required',
-            'description.max' => 'Description Minimum 5 Characters',
+            'description.min' => 'Description Minimum 5 Characters',
+            'description.max' => 'Description Maximum 5000 Characters',
             'image.mimes' => 'Image Type is jpeg,png,jpg,gif,svg',
             'image.max' => 'Image Must be uploaded 2 MB'
         ];

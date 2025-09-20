@@ -140,8 +140,8 @@ class BlogController extends Controller
     public function BlogLikeUnlikeToggle(Request $request)
     {
         DB::beginTransaction();
-        try{
-            /*optinal In case Future mein koi case agar ho toh */
+
+        try {
             $validator = Validator::make($request->all(), [
                 'action' => 'required|in:like,unlike',
             ], [
@@ -149,21 +149,25 @@ class BlogController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json($validator->errors());
+                return response()->json(['status' => 422, 'errors' => $validator->errors()]);
             }
 
+            $user = Auth::id();
+
             $blog = Blog::with(['likes' => function ($q) use ($user) {
-                $q->where('user_id', Auth::id());
+                $q->where('user_id', $user);
             }])->find($request->blogId);
 
-            if (!$blog)
-                return response()->json(['status' => 401, 'msg' => 'No Founded Blog']);
+            if (!$blog) {
+                return response()->json(['status' => 404, 'msg' => 'Blog not found']);
+            }
 
             $existing = $blog->likes->first();
 
-            if ($request->action == 'unlike') {
+            if ($request->action === 'unlike') {
                 if ($existing) {
                     $existing->delete();
+                    DB::commit();
                     return response()->json(['message' => 'unliked']);
                 }
                 return response()->json(['message' => 'not liked yet']);
@@ -172,16 +176,24 @@ class BlogController extends Controller
             if ($request->action === 'like') {
                 if (!$existing) {
                     $blog->likes()->create(['user_id' => $user]);
+                    DB::commit();
                     return response()->json(['message' => 'liked']);
                 }
                 return response()->json(['message' => 'already liked']);
             }
-            DB::commit();
-        }
-        catch (\Exception $e){
-            Log::error('Blog Not Liked',$e->getMessage(),['trace' => $e->getTraceAsString()]);
+
+        } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['status' => 500, 'message' => 'Oops...something went wrong. Please try again.']);
+
+            Log::error('Blog Not Liked', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status'  => 500,
+                'message' => 'Oops...something went wrong. Please try again.',
+            ]);
         }
     }
 
