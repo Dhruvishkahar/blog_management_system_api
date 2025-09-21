@@ -25,6 +25,7 @@ class BlogController extends Controller
         $perPage = $request->input('per_page', 10);
         $filter = $request->input('filter');
         $search = $request->input('search');
+        $userId = Auth::id();
 
         try {
             // Get blogs with pagination
@@ -52,6 +53,11 @@ class BlogController extends Controller
             }
             /* multiple-field  Search Filter End*/
             $blogs = $query->orderBy('created_at', 'desc')->paginate($perPage)->appends($request->query());
+
+            $blogs->getCollection()->transform(function ($blog) use ($userId) {
+                $blog->is_like = $userId && $blog->likes->contains('user_id', $userId) ? 'yes' : 'no';
+                return $blog;
+            });
 
             return response()->json([
                 'success' => 200,
