@@ -54,7 +54,7 @@ class BlogController extends Controller
             /* multiple-field  Search Filter End*/
             $blogs = $query->orderBy('created_at', 'desc')->paginate($perPage)->appends($request->query());
 
-            $blogs->getCollection()->transform(function ($blog) use ($userId) {
+            $blogs->map(function($blog) use($userId){
                 $blog->is_like = $userId && $blog->likes->contains('user_id', $userId) ? 'yes' : 'no';
                 return $blog;
             });
